@@ -12,14 +12,14 @@ module HealthCards
   # Exception thrown when a private key is expected or required
   class MissingPrivateKeyError < JWSError
     def initialize(msg = 'Missing private key')
-      super(msg)
+      super
     end
   end
 
   # Exception thrown when a public key is expected or required
   class MissingPublicKeyError < JWSError
     def initialize(msg = 'Missing public key')
-      super(msg)
+      super
     end
   end
 
@@ -30,14 +30,14 @@ module HealthCards
   # Exception thrown when an invalid payload is provided
   class InvalidPayloadError < HealthCardError
     def initialize(msg = 'Bundle is not a valid FHIR Bundle')
-      super(msg)
+      super
     end
   end
 
   # Exception thrown when verifiable credential JSON does not include a locatable FHIR Bundle
   class InvalidCredentialError < HealthCardError
     def initialize(msg = 'Unable to locate FHIR Bundle in credential')
-      super(msg)
+      super
     end
   end
 

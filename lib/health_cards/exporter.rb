@@ -45,7 +45,7 @@ module HealthCards
           end
         end
 
-        raise InvalidParametersError.new(code: code, message: err_msg) if code
+        raise InvalidParametersError.new(code:, message: err_msg) if code
 
         types
       end

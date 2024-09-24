@@ -22,8 +22,8 @@ module HealthCards
 
         header, payload, signature = jws.to_s.split('.').map { |entry| decode(entry) }
         header = JSON.parse(header)
-        JWS.new(header: header, payload: payload, signature: signature,
-                public_key: public_key, key: key)
+        JWS.new(header:, payload:, signature:,
+                public_key:, key:)
       end
     end
 

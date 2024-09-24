@@ -21,7 +21,7 @@ module HealthCards
     # @param bundle [FHIR::Bundle, String] the FHIR bundle used as the Health Card payload
     # @return [Payload::]
     def create_payload(bundle, type: Payload)
-      type.new(issuer: url, bundle: bundle)
+      type.new(issuer: url, bundle:)
     end
 
     # Create a JWS for a given payload
@@ -31,12 +31,12 @@ module HealthCards
     # Leave blank for default SMART Health Card behavior
     # @return [HealthCards::JWS] An instance of JWS using the payload and signed by the issuer's private key
     def issue_jws(bundle, type: Payload)
-      card = create_payload(bundle, type: type)
-      JWS.new(header: jws_header, payload: card.to_s, key: key)
+      card = create_payload(bundle, type:)
+      JWS.new(header: jws_header, payload: card.to_s, key:)
     end
 
     def issue_health_card(bundle, type: Payload)
-      jws = issue_jws(bundle, type: type)
+      jws = issue_jws(bundle, type:)
       HealthCards::HealthCard.new(jws)
     end
 

@@ -35,8 +35,8 @@ module HealthCards
     # The block should return a boolean
     # @param type [Class] :type should be a class representing a FHIR resource
     # @return The first bundle resource that matches the type and/or block evaluation
-    def resource(type: nil, &block)
-      resources(type: type, &block).first
+    def resource(type: nil, &)
+      resources(type:, &).first
     end
 
     # Extracts all resources from the bundle contained in the HealthCard. A filter

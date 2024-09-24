@@ -7,7 +7,7 @@ require 'health_cards'
 key = HealthCards::PrivateKey.generate_key
 key.to_jwk
 
-issuer = HealthCards::Issuer.new(key: key, url: 'http://example.com')
+issuer = HealthCards::Issuer.new(key:, url: 'http://example.com')
 
 jws = issuer.issue_jws(FHIR::Bundle.new)
 hc = issuer.issue_health_card(FHIR::Bundle.new, type: HealthCards::COVIDPayload)

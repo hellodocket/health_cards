@@ -104,7 +104,7 @@ module HealthCards
     end
 
     def to_jwk
-      coordinates.merge(kid: kid, use: 'sig', alg: 'ES256')
+      coordinates.merge(kid:, use: 'sig', alg: 'ES256')
     end
 
     def kid
@@ -120,7 +120,7 @@ module HealthCards
 
       key_binary = @key.public_key.to_bn.to_s(2)
       coords = { x: key_binary[1, key_binary.length / 2],
-                 y: key_binary[key_binary.length / 2 + 1, key_binary.length] }
+                 y: key_binary[(key_binary.length / 2) + 1, key_binary.length] }
       coords[:d] = @key.private_key.to_s(2) if @key.private_key?
       @coordinates = coords.transform_values do |val|
         Base64.urlsafe_encode64(val, padding: false)

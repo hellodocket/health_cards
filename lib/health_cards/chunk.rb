@@ -6,8 +6,8 @@ module HealthCards
   class Chunk
     attr_reader :ordinal, :data, :qrcode
 
-    SINGLE_REGEX = %r{shc:/}.freeze
-    MULTI_REGEX = %r{shc:/[0-9]*/[0-9]*/}.freeze
+    SINGLE_REGEX = %r{shc:/}
+    MULTI_REGEX = %r{shc:/[0-9]*/[0-9]*/}
 
     def initialize(input:, ordinal: 1)
       @ordinal = ordinal

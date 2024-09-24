@@ -35,7 +35,7 @@ module HealthCards
       StructureDefinition|StructureMap|Subscription|Substance|SubstanceNucleicAcid|SubstancePolymer|SubstanceProtein|
       SubstanceReferenceInformation|SubstanceSourceMaterial|SubstanceSpecification|SupplyDelivery|SupplyRequest|Task|
       TerminologyCapabilities|TestReport|TestScript|ValueSet|VerificationResult|VisionPrescription)/
-      [A-Za-z0-9\-.]{1,64}(/_history/[A-Za-z0-9\-.]{1,64})?}x.freeze
+      [A-Za-z0-9\-.]{1,64}(/_history/[A-Za-z0-9\-.]{1,64})?}x
 
     attr_reader :issuer, :nbf, :bundle
 
@@ -50,7 +50,7 @@ module HealthCards
         raise HealthCards::InvalidCredentialError unless bundle_hash
 
         bundle = extract_bundle(payload)
-        new(issuer: json['iss'], bundle: bundle)
+        new(issuer: json['iss'], bundle:)
       end
 
       # Extract a bundle from a compressed payload
@@ -145,8 +145,8 @@ module HealthCards
 
     # A minified JSON string matching the VC structure specified by https://smarthealth.cards/#health-cards-are-encoded-as-compact-serialization-json-web-signatures-jws
     # @return [String] JSON string
-    def to_json(*args)
-      to_hash.to_json(*args)
+    def to_json(*)
+      to_hash.to_json(*)
     end
 
     # Processes the bundle according to https://smarthealth.cards/#health-cards-are-small and returns
