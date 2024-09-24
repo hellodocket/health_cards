@@ -33,7 +33,7 @@ This library also natively supports [SMART Health Cards: Vaccination & Testing I
 Add this line to your application's Gemfile:
 
 ```ruby
-gem "health_cards", "~> 1.2", git: "https://github.com/hellodocket/health_cards", branch: "feature/lib-only-openssl-3"
+gem "health_cards", "~> 1.2", git: "https://github.com/hellodocket/health_cards", branch: "feature/lib-only-openssl3"
 ```
 
 And then execute:
