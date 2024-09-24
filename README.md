@@ -1,8 +1,10 @@
 # HealthCards
 
-![Build](https://github.com/dvci/health_cards/actions/workflows/ruby.yml/badge.svg)
+This repository includes a Ruby gem for [SMART Health Cards](https://smarthealth.cards/).
 
-This repository includes a Ruby gem for [SMART Health Cards](https://smarthealth.cards/) **and** a reference implementation for the [SMART Health Cards: Vaccination & Testing Implementation Guide](https://vci.org/ig/vaccination-and-testing). Go to the [Health Card Gem](#health-cards-gem) section to read about the Ruby library or go to the [Reference Implementation](#reference-implementation) section to try a ready-to-use rails application.
+This rips out all of the Rails cruft that led to 120+ supply chain vulnerabilities in https://github.com/dvci/health_cards
+
+It's as minimal as it's going to get, and hopefully it stays this way.
 
 ## Reference Implementation
 
@@ -17,63 +19,8 @@ This Issuer supports the three defined [methods of retrieving a SMART Health Car
 The Verifier supports scanning QR codes.
 
 ### System Requirements
- - Ruby 2.7 (prior versions may work but are not tested)
+ - Ruby 3.2 (prior versions may work but are not tested)
  - [Bundler](https://bundler.io)
- - [Node.js](https://nodejs.org/en/)
- - [Yarn](https://yarnpkg.com)
-
-### Quick Start
-
-Clone and change directory into the repository:
-
-```bash
-git clone https://github.com/dvci/health_cards.git
-cd health_cards
-```
-#### Local Development
-
-Setup environment:
-
-`bin/setup`
-
-Run server:
-
-`bin/rails server`
-
-Then go to `http://127.0.0.1:3000` to view the locally running application.
-
-#### Docker:
-
-Alternatively, you can create a Docker image and start it in a container:
-```
-docker build -t health_cards .
-docker run -p 3000:3000 --env HOST=https://myserver.com health_cards
-```
-The `HOST` environment variable will be used as the `iss` value in the SMART Health Card JWS.
-By default this value is `http://localhost:3000`.
-The Docker container will be running at `http://127.0.0.1:3000`, unless mapped to a different port.
-
-
-#### Docker Compose 
-
-Docker Compose can be used to deploy a production version of the application behind nginx and is
-especially useful for deploying behind an SSL terminating load balancer.
-
-```
-docker-compose up --build
-```
-
-There are two environment variables which can be configured:
-
-* `HEALTH_CARDS_HOST` is used as the `iss` value in issued Health Cards and for identifying the SMART Endpoint locations
-* `HEALTH_CARDS_SECRET_KEY_BASE` is used by rails as the input secret to the application's key generator, 
-which in turn is used to create all MessageVerifiers/MessageEncryptors, including the ones that 
-sign and encrypt cookies. [See `secret_key_base`](https://api.rubyonrails.org/classes/Rails/Application.html#method-i-secret_key_base)
-
-When deploying a production instance it is important that a new secret base is generated and used. 
-A new secret base can be generated with `bin/rails secret`.
-
-When testing locally `proxy_set_header  X-Forwarded-Ssl on;` should be commented out in `nginx/nginx.conf`.
 
 ## Health Cards Gem
 
@@ -86,7 +33,7 @@ This library also natively supports [SMART Health Cards: Vaccination & Testing I
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'health_cards'
+gem "health_cards", "~> 1.2", git: "https://github.com/hellodocket/health_cards", branch: "feature/lib-only-openssl-3"
 ```
 
 And then execute:
@@ -95,27 +42,15 @@ And then execute:
  $ bundle install
 ```
 
-Or install it yourself as:
-
-```
- $ gem install health_cards
-```
-
 ### Documentation
 
 See usage examples in [USAGE.md](https://github.com/dvci/health_cards/blob/main/lib/USAGE.md). 
 
 See full documentation in [API.md](https://github.com/dvci/health_cards/blob/main/lib/API.md).
 
-## Development
-
-Fork or clone this repository, then run `bin/setup` or `bundle install` to install dependencies. Run tests with `rake test`. Access an interactive prompt for experimentation with `bin/console`.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/dvci/health_cards. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/dvci/health_cards/blob/main/CODE_OF_CONDUCT.md).
+Feel free to open a PR to this repo or file an issue.
 
 ## License
 
