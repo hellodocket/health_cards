@@ -2,27 +2,27 @@
 
 require 'test_helper'
 
-class MonkeypoxImmunizationPayloadTest < ActiveSupport::TestCase
-  setup do
+class MonkeypoxImmunizationPayloadTest < CommonTest
+  def setup
     bundle = FHIR::Bundle.new(load_json_fixture('example-monkeypox-immunization-bundle'))
     @payload = HealthCards::MonkeypoxImmunizationPayload.new(bundle: bundle, issuer: 'http://example.org')
   end
 
-  test 'is of custom type' do
+  def test_is_a_custom_type
     assert @payload.is_a?(HealthCards::MonkeypoxImmunizationPayload)
   end
 
-  test 'includes correct types' do
+  def test_includes_correct_types
     assert_includes HealthCards::MonkeypoxImmunizationPayload.types, 'https://smarthealth.cards#health-card'
     assert_includes HealthCards::MonkeypoxImmunizationPayload.types, 'https://smarthealth.cards#monkeypox'
     assert_includes HealthCards::MonkeypoxImmunizationPayload.types, 'https://smarthealth.cards#immunization'
   end
 
-  test 'supports immunization type' do
+  def test_supports_immunization_type
     assert HealthCards::MonkeypoxImmunizationPayload.supports_type?('https://smarthealth.cards#immunization')
   end
 
-  test 'minified immunization entries' do
+  def test_minified_immunization_entries
     bundle = @payload.strip_fhir_bundle
     imm = bundle.entry[1].resource
 

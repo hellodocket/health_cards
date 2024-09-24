@@ -2,27 +2,27 @@
 
 require 'test_helper'
 
-class COVIDLabResultPayloadTest < ActiveSupport::TestCase
-  setup do
+class COVIDLabResultPayloadTest < CommonTest
+  def setup
     bundle = FHIR::Bundle.new(load_json_fixture('example-covid-lab-result-bundle'))
     @lab_result_card = HealthCards::COVIDLabResultPayload.new(bundle: bundle, issuer: 'http://example.org')
   end
 
-  test 'is of custom type' do
+  def test_is_a_custom_type
     assert @lab_result_card.is_a?(HealthCards::COVIDLabResultPayload)
   end
 
-  test 'includes correct types' do
+  def test_includes_correct_types
     HealthCards::COVIDLabResultPayload.types.include?('https://smarthealth.cards#health-card')
     HealthCards::COVIDLabResultPayload.types.include?('https://smarthealth.cards#covid19')
     HealthCards::COVIDLabResultPayload.types.include?('https://smarthealth.cards#laboratory')
   end
 
-  test 'supports laboratory type' do
+  def test_supports_laboratory_type
     assert HealthCards::COVIDLabResultPayload.supports_type?('https://smarthealth.cards#laboratory')
   end
 
-  test 'minified lab result entries' do
+  def test_minified_lab_result_entries
     bundle = @lab_result_card.strip_fhir_bundle
     assert_equal 2, bundle.entry.size
     obs = bundle.entry[1].resource

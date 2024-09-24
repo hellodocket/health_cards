@@ -4,20 +4,14 @@ require:
   - rubocop-rails
 
 AllCops:
-  TargetRubyVersion: 2.7
+  TargetRubyVersion: 3.2
   NewCops: enable
   Exclude:
-    - 'config.ru'
-    - 'vendor/**/*'
-    - 'node_modules/**/*'
     - '.git/**/*'
     - 'bin/*'
-    - 'config/**'
-    - 'config/initializers/devise.rb'
-    - 'db/schema.rb'
-    - 'db/migrate/*'
     - 'Gemfile'
     - 'health_cards.gemspec'
+    - test/**/*
 
 Style/Documentation:
   Exclude:

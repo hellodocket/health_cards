@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class PrivateKeyTest < Minitest::Test
+class PrivateKeyTest < CommonTest
   def setup
     # Key from https://datatracker.ietf.org/doc/html/rfc7515#appendix-A.3.1
     @jwk = { kty: 'EC',

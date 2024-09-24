@@ -2,13 +2,13 @@
 
 require 'test_helper'
 
-class PayloadTest < ActiveSupport::TestCase
+class PayloadTest < CommonTest
   class TestCOVIDLabPayload < HealthCards::Payload
     additional_types 'https://smarthealth.cards#covid19'
     additional_types 'https://smarthealth.cards#laboratory'
   end
 
-  setup do
+  def setup
     # from https://smarthealth.cards/examples/example-00-d-jws.txt
 
     @issuer = 'https://smarthealth.cards/examples/issuer'
@@ -21,21 +21,21 @@ class PayloadTest < ActiveSupport::TestCase
 
   ## Constructor
 
-  test 'Payload can be created from a Bundle' do
+  def test_payload_can_be_created_from_a_bundle
     assert_not_nil @health_card.bundle
     assert @health_card.bundle.is_a?(FHIR::Bundle)
   end
 
-  test 'Payload can be created without allows' do
+  def test_payload_can_be_created_without_allows
     bundle = FHIR.from_contents(File.read('test/fixtures/files/example-covid-lab-result-bundle.json'))
     test_card = TestCOVIDLabPayload.new(issuer: @issuer, bundle: bundle)
     test_card.to_hash
     test_card.to_hash(filter: false)
   end
 
-  test 'Payload handles empty payloads' do
+  def test_payload_handles_empty_paylods
     compressed_payload = HealthCards::Payload.compress_payload(FHIR::Bundle.new.to_json)
-    jws = HealthCards::JWS.new(header: {}, payload: compressed_payload, key: rails_private_key)
+    jws = HealthCards::JWS.new(header: {}, payload: compressed_payload, key: private_key)
     assert_raises HealthCards::InvalidCredentialError do
       HealthCards::HealthCard.new(jws.to_s)
     end
@@ -43,14 +43,14 @@ class PayloadTest < ActiveSupport::TestCase
 
   ## Creating a Payload from a JWS
 
-  test 'Payload can be created from a JWS' do
+  def test_payload_can_be_created_from_jws
     jws_string = load_json_fixture('example-jws')
     card = HealthCards::HealthCard.new(jws_string)
     assert_not_nil card.bundle
     assert card.bundle.is_a?(FHIR::Bundle)
   end
 
-  test 'Payload throws an exception when the payload is not a FHIR Bundle' do
+  def test_payload_throws_an_exception_when_the_payload_is_not_a_FHIR_bundle
     assert_raises HealthCards::InvalidPayloadError do
       HealthCards::Payload.new(issuer: @issuer, bundle: FHIR::Patient.new)
     end
@@ -64,7 +64,7 @@ class PayloadTest < ActiveSupport::TestCase
     end
   end
 
-  test 'includes required credential attributes in json' do
+  def test_includes_required_credential_attributes_in_json
     hash = JSON.parse(@health_card.to_json)
 
     assert_equal @issuer, hash['iss']
@@ -76,12 +76,10 @@ class PayloadTest < ActiveSupport::TestCase
     bundle = hash.dig('vc', 'credentialSubject', 'fhirBundle')
 
     assert_not_nil bundle
-    assert_nothing_raised do
-      FHIR::Bundle.new(bundle)
-    end
+    FHIR::Bundle.new(bundle)
   end
 
-  test 'export with unfiltered bundle' do
+  def test_export_with_unfiltered_bundle
     hash = @health_card.to_hash(filter: false)
     bundle = hash.dig(:vc, :credentialSubject, :fhirBundle)
 
@@ -93,7 +91,7 @@ class PayloadTest < ActiveSupport::TestCase
     assert_not_nil resources[2].dig('code', 'text')
   end
 
-  test 'redefine_uris populates Bundle.entry.fullUrl elements with short resource-scheme URIs' do
+  def test_redefine_uris_populates_BundleentryfullUrl_elements_with_short_resource_scheme_URIs
     stripped_bundle = @health_card.strip_fhir_bundle
 
     resource_nums = []
@@ -109,26 +107,26 @@ class PayloadTest < ActiveSupport::TestCase
     assert_equal(resource_nums, inc_array)
   end
 
-  test 'changes to stripped bundle do not affect bundle values' do
+  def test_changes_to_strpped_bundle_do_not_affect_bundle_values
     original_json = @health_card.to_json
     @health_card.strip_fhir_bundle
     original_json2 = @health_card.to_json
     assert_equal original_json, original_json2
   end
 
-  test 'do not strip name.text elements' do
+  def test_do_not_strp_name_text_elements
     stripped_bundle = @health_card.strip_fhir_bundle
     assert_not_nil stripped_bundle.entry[0].resource.name[0].text
   end
 
-  test 'update_elements strips resource-level "id", "meta", and "text" elements from the FHIR Bundle' do
+  def test_update_elements_strips_resource_level_id_meta_text_elements_from_fhir_bundle
     stripped_bundle = @health_card.strip_fhir_bundle
     stripped_entries = stripped_bundle.entry
 
     stripped_entries.each do |entry|
       resource = entry.resource
-      assert_not(resource.id, "#{resource} has id")
-      assert_not(resource.text, "#{resource} has text")
+      assert(!resource.id, "#{resource} has id")
+      assert(!resource.text, "#{resource} has text")
       meta = resource.meta
       if meta
         assert_equal 1, meta.to_hash.length
@@ -137,11 +135,11 @@ class PayloadTest < ActiveSupport::TestCase
     end
   end
 
-  test 'support single type' do
+  def test_supports_single_type
     assert HealthCards::Payload.supports_type?('https://smarthealth.cards#health-card')
   end
 
-  test 'update_nested_elements strips any "CodeableConcept.text" and "Coding.display" elements from the FHIR Bundle' do
+  def test_update_nested_elements_strips_any_codeableconcept_text_and_display_elements_from_fhir_bundle
     stripped_bundle = @health_card.strip_fhir_bundle
     stripped_resources = stripped_bundle.entry
 
@@ -153,7 +151,7 @@ class PayloadTest < ActiveSupport::TestCase
     assert_nil coding.display
   end
 
-  test 'update_nested_elements populates Reference.reference elements with short resource-scheme URIs' do
+  def test_update_nested_elements_populates_reference_reference_elements_with_short_resource_scheme_uris
     stripped_bundle = @health_card.strip_fhir_bundle
     stripped_resources = stripped_bundle.entry
     resource_with_reference = stripped_resources[2]
@@ -163,19 +161,26 @@ class PayloadTest < ActiveSupport::TestCase
     assert_match(/resource:[0-9]+/, reference)
   end
 
-  test 'all reference types are replaced with short resource-scheme URIs' do
+  def test_all_reference_types_are_replaced_with_short_resource_scheme_URIs
     bundle = FHIR::Bundle.new(load_json_fixture('example-logical-link-bundle'))
     card = HealthCards::Payload.new(issuer: 'http://example.org/fhir', bundle: bundle)
-    assert_nothing_raised do
-      new_bundle = card.strip_fhir_bundle
+    new_bundle = card.strip_fhir_bundle
 
-      assert_entry_references_match(new_bundle.entry[0], new_bundle.entry[2].resource.subject) # logical ref
-      assert_entry_references_match(new_bundle.entry[0], new_bundle.entry[3].resource.subject) # full url ref
-      assert_entry_references_match(new_bundle.entry[1], new_bundle.entry[4].resource.subject) # uuid ref
-    end
+    assert_entry_references_match(new_bundle.entry[0], new_bundle.entry[2].resource.subject) # logical ref
+    assert_entry_references_match(new_bundle.entry[0], new_bundle.entry[3].resource.subject) # full url ref
+    assert_entry_references_match(new_bundle.entry[1], new_bundle.entry[4].resource.subject) # uuid ref
   end
 
-  test 'raises error when url refers to resource outside bundle' do
+  # Helper function
+  def assert_entry_references_match(patient_entry, reference_element)
+    patient_url = patient_entry.fullUrl
+    ref_url = reference_element.reference
+
+    assert_not_nil patient_url
+    assert_equal patient_url, ref_url
+  end
+
+  def test_raises_error_when_url_referes_to_resource_outside_bundle
     bundle = FHIR::Bundle.new(load_json_fixture('example-logical-link-bundle-bad'))
     card = HealthCards::Payload.new(issuer: 'http://example.org/fhir', bundle: bundle)
     assert_raises HealthCards::InvalidBundleReferenceError do
@@ -183,7 +188,7 @@ class PayloadTest < ActiveSupport::TestCase
     end
   end
 
-  test 'compress_payload applies a raw deflate compression and allows for the original payload to be restored' do
+  def test_compress_payload_applies_a_raw_deflate_compression_and_allows_for_the_original_payload_to_be_restored
     original_hc = HealthCards::Payload.new(issuer: @issuer, bundle: FHIR::Bundle.new)
     new_hc = HealthCards::Payload.from_payload(original_hc.to_s)
     assert_equal original_hc.to_hash, new_hc.to_hash

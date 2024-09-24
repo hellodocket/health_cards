@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-
 require 'test_helper'
 require 'health_cards/chunking_utils'
 
@@ -12,37 +11,37 @@ FILEPATH_NUMERIC_QR_CODE_MULTIPLE = 'example-numeric-qr-code-multiple'
 FILEPATH_JWS = 'example-jws'
 FILEPATH_JWS_MULTIPLE = 'example-jws-multiple'
 
-class ChunkingTest < ActiveSupport::TestCase
-  test 'Individual chunks of split-up JWS have string sizes of < 1191 characters' do
+class ChunkingTest < CommonTest
+  def test_individual_chunks_of_split_up_JWS_have_string_sizes_of_under_1191_characters
     large_jws_split = HealthCards::ChunkingUtils.split_jws(JWS_LARGE)
     large_jws_split.each do |chunk|
       assert_operator(1191, :>=, chunk.length)
     end
   end
 
-  test 'A JWS of size <= 1195 returns only one chunk' do
+  def test_JWS_size_lte_1195_returns_only_one_chunk
     small_jws_split = HealthCards::ChunkingUtils.jws_to_qr_chunks(JWS_SMALL)
     assert_equal(1, small_jws_split.length)
   end
 
-  test 'A JWS of size > 1195 returns multiple chunks' do
+  def test_jws_gt_1195_returns_multiple_chunks
     large_jws_split = HealthCards::ChunkingUtils.jws_to_qr_chunks(JWS_LARGE)
     assert_operator(1, :<, large_jws_split.length)
   end
 
-  test 'A JWS of size 1191 * 2 + 1 characters returns 3 chunks' do
+  def test_JWS_size_3_chunks_returns_3_chunks
     thrice_jws_split = HealthCards::ChunkingUtils.jws_to_qr_chunks(JWS_3)
     assert_equal(3, thrice_jws_split.length)
   end
 
-  test 'A JWS of size <= 1195 returns one QR chunk' do
+  def test_JWS_size_lte_1195_returns_one_QR_chunk
     small_qr_chunk = HealthCards::ChunkingUtils.jws_to_qr_chunks(JWS_SMALL)
     assert_equal(1, small_qr_chunk.length)
     expected_result = ["shc:/#{JWS_SMALL.chars.map { |c| format('%02d', c.ord - 45) }.join}"]
     assert_equal(expected_result, small_qr_chunk)
   end
 
-  test 'A JWS of size 1191 * 2 + 1 characters returns 3 QR chunks' do
+  def test_JWS_size_3_chunks_returns_3_QR_chunks
     qr_chunks = HealthCards::ChunkingUtils.jws_to_qr_chunks(JWS_3)
     assert_equal(3, qr_chunks.length)
 
@@ -52,14 +51,14 @@ class ChunkingTest < ActiveSupport::TestCase
     assert_equal(expected_result, qr_chunks)
   end
 
-  test 'A single numeric QR code returns correctly assembled JWS' do
+  def test_single_numeric_QR_code_returns_assembled_JWS
     qr_chunks = load_json_fixture(FILEPATH_NUMERIC_QR_CODE)
     expected_jws = load_json_fixture(FILEPATH_JWS)
     assembled_jws = HealthCards::ChunkingUtils.qr_chunks_to_jws qr_chunks
     assert_equal expected_jws, assembled_jws
   end
 
-  test 'Multiple QR codes return correctly assembled JWS' do
+  def test_multiple_QR_codes_return_JWS
     qr_chunks = load_json_fixture(FILEPATH_NUMERIC_QR_CODE_MULTIPLE)
     expected_jws = load_json_fixture(FILEPATH_JWS_MULTIPLE)
 

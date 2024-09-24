@@ -2,28 +2,28 @@
 
 require 'test_helper'
 
-class HealthCardTest < ActiveSupport::TestCase
-  setup do
+class HealthCardTest < CommonTest
+  def setup
     @jws = load_json_fixture('example-jws')
     @card = HealthCards::HealthCard.new(@jws)
   end
 
-  test 'json' do
+  def test_json
     credential = JSON.parse(@card.to_json)
     vc = credential['verifiableCredential'][0]
     assert_equal @jws, vc
   end
 
-  test 'qr codes' do
+  def test_qr_codes
     assert_not_nil @card.code_by_ordinal(1)
   end
 
-  test 'resource w/type' do
+  def test_resource_with_type
     patient = @card.resource(type: FHIR::Patient)
     assert_equal FHIR::Patient, patient.class
   end
 
-  test 'resources w/type' do
+  def test_resources_with_type
     imms = @card.resources(type: FHIR::Immunization)
     assert_equal 2, imms.length
     imms.each do |i|
@@ -31,14 +31,14 @@ class HealthCardTest < ActiveSupport::TestCase
     end
   end
 
-  test 'resource w/type and rules' do
+  def test_resource_with_type_and_rules
     lot = 'Lot #0000001'
     imms = @card.resources(type: FHIR::Immunization) { |i| i.lotNumber == lot }
     assert_equal 1, imms.length
     assert_equal lot, imms.first.lotNumber
   end
 
-  test 'only rules' do
+  def test_only_rules
     resources = @card.resources { |r| !r.id.nil? }
     assert_equal 0, resources.length
   end

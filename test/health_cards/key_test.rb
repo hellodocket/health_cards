@@ -3,9 +3,9 @@
 require 'test_helper'
 require 'fileutils'
 
-class KeyTest < ActiveSupport::TestCase
-  setup do
-    @key_path = rails_key_path
+class KeyTest < CommonTest
+  def setup
+    @key_path = key_path
     @key = HealthCards::PrivateKey.load_from_or_create_from_file(@key_path)
     @test_jwk = {
       kty: 'EC',
@@ -18,20 +18,20 @@ class KeyTest < ActiveSupport::TestCase
     }
   end
 
-  teardown do
+  def teardown
     cleanup_keys
   end
 
-  test 'creates keys' do
+  def test_it_creates_keys
     assert_path_exists(@key_path)
   end
 
-  test 'kid calculation is correct' do
+  def test_kid_calculation_is_correct
     jwk = HealthCards::Key.from_jwk(@test_jwk)
     assert_equal jwk.kid, @test_jwk[:kid]
   end
 
-  test 'exports to jwk' do
+  def test_exports_to_jwk
     jwk = @key.public_key.to_jwk
 
     assert_not_nil jwk[:x]
@@ -42,7 +42,7 @@ class KeyTest < ActiveSupport::TestCase
     assert_equal 'ES256', jwk[:alg]
   end
 
-  test 'Create key from jwk containing the private key' do
+  def test_create_key_from_jwk_containing_the_private_key
     jwk = @key.to_jwk
     jwk_key = HealthCards::Key.from_jwk(jwk)
 
@@ -60,7 +60,7 @@ class KeyTest < ActiveSupport::TestCase
     assert_equal jwk[:d], new_jwk[:d]
   end
 
-  test 'Create key from jwk containing the public key' do
+  def test_create_key_from_jwk_containing_the_public_key
     jwk = @key.public_key.to_jwk
     jwk_key = HealthCards::Key.from_jwk(jwk)
 
@@ -77,13 +77,13 @@ class KeyTest < ActiveSupport::TestCase
     assert_equal jwk[:y], new_jwk[:y]
   end
 
-  test 'public coordinates doesn\'t include d' do
+  def test_public_coordinates_dont_include_d
     pk = @key.public_key
     assert_nil pk.public_coordinates[:d]
     assert_equal @key.public_coordinates, pk.coordinates
   end
 
-  test 'Use existing keys if they exist' do
+  def test_use_existing_keys_if_they_exist
     original_jwks = @key.public_key.to_json
 
     new_jwks = HealthCards::PrivateKey.load_from_or_create_from_file(@key_path).public_key.to_json
@@ -91,7 +91,7 @@ class KeyTest < ActiveSupport::TestCase
     assert_equal original_jwks, new_jwks
   end
 
-  test 'verify payload' do
+  def test_verify_payload
     payload = 'foo'
     sigg = @key.sign('foo')
     assert @key.public_key.verify(payload, sigg)

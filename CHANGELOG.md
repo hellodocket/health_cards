@@ -2,6 +2,12 @@
 
 _Note: This changelog is tracking changes related to the `health_cards` library._
 
+## [v1.1.2]
+- Removed everything except the library
+
+## [v1.1.1]
+- Upgraded to support OpenSSL v3
+
 ## [v1.1.0]
 - Added `MonkeypoxImmunizationPayload` [\#103](https://github.com/dvci/health_cards/pull/103)
 

@@ -30,5 +30,4 @@ require 'fhir_models'
 
 module HealthCards
   class Error < StandardError; end
-  # Your code goes here...
 end

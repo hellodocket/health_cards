@@ -2,8 +2,8 @@
 
 require 'test_helper'
 
-class MonkeypoxPayloadTest < ActiveSupport::TestCase
-  setup do
+class MonkeypoxPayloadTest < CommonTest
+  def setup
     @bundle = FHIR::Bundle.new(load_json_fixture('example-monkeypox-immunization-bundle'))
     @card = HealthCards::MonkeypoxPayload.new(bundle: @bundle, issuer: 'http://example.org')
   end
@@ -15,16 +15,16 @@ class MonkeypoxPayloadTest < ActiveSupport::TestCase
     additional_types 'https://smarthealth.cards#test'
   end
 
-  test 'is of custom type' do
+  def test_is_a_custom_type
     assert @card.is_a?(HealthCards::MonkeypoxPayload)
   end
 
-  test 'includes correct types' do
+  def test_includes_correct_types
     assert_includes HealthCards::MonkeypoxPayload.types, 'https://smarthealth.cards#health-card'
     assert_includes HealthCards::MonkeypoxPayload.types, 'https://smarthealth.cards#monkeypox'
   end
 
-  test 'includes required credential attributes in hash' do
+  def test_includes_required_credential_attributes_in_hash
     hash = @card.to_hash
     type = hash.dig(:vc, :type)
     assert_not_nil type
@@ -36,8 +36,8 @@ class MonkeypoxPayloadTest < ActiveSupport::TestCase
     assert_equal HealthCards::MonkeypoxPayload.fhir_version, fhir_version
   end
 
-  test 'bundle creation' do
-    @card = rails_issuer.issue_health_card(@bundle, type: HealthCards::MonkeypoxPayload)
+  def test_bundle_creation
+    @card = issuer.issue_health_card(@bundle, type: HealthCards::MonkeypoxPayload)
     bundle = @card.bundle
     assert_equal 3, bundle.entry.size
     assert_equal 'collection', bundle.type
@@ -52,19 +52,17 @@ class MonkeypoxPayloadTest < ActiveSupport::TestCase
     end
   end
 
-  test 'valid bundle json' do
-    assert_nothing_raised do
-      assert_fhir(@card.bundle.to_json, type: FHIR::Bundle, validate: false)
-    end
+  def test_valid_bundle_json
+    assert_fhir(@card.bundle.to_json, type: FHIR::Bundle, validate: false)
   end
 
-  test 'supports multiple types' do
+  def test_supports_multiple_types
     assert HealthCards::MonkeypoxPayload.supports_type? [
       'https://smarthealth.cards#health-card', 'https://smarthealth.cards#monkeypox'
     ]
   end
 
-  test 'minified patient entries' do
+  def test_minified_patient_entries
     bundle = @card.strip_fhir_bundle
     assert_equal 3, bundle.entry.size
     patient = bundle.entry[0].resource
@@ -75,7 +73,7 @@ class MonkeypoxPayloadTest < ActiveSupport::TestCase
     assert_equal 'ghp-example', patient.identifier[0].value
   end
 
-  test 'inheritance of attributes' do
+  def test_inheritance_of_attributes
     assert_equal HealthCards::MonkeypoxPayload.types, MonkeypoxHealthCardSame.types
     assert_equal HealthCards::MonkeypoxPayload.fhir_version, MonkeypoxHealthCardSame.fhir_version
     assert_equal 1, HealthCards::Payload.types.length

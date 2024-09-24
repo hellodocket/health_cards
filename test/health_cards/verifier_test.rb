@@ -1,41 +1,47 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'ostruct'
 
-class VerifierTest < ActiveSupport::TestCase
-  setup do
+class VerifierTest < CommonTest
+  def setup
     @private_key = private_key
     @public_key = @private_key.public_key
-    @verifier = HealthCards::Verifier.new(keys: rails_public_key)
-    @jws = rails_issuer.issue_jws(bundle_payload)
+    @verifier = HealthCards::Verifier.new(keys: @public_key)
+    @jws = issuer.issue_jws(bundle_payload)
+    @extra_key_path = "#{key_path}-verifier-test"
+    @extra_key = HealthCards::PrivateKey.load_from_or_create_from_file(@extra_key_path)
+  end
+
+  def teardown
+    super
+    FileUtils.rm_rf(@extra_key_path) if File.exist?(@extra_key_path)
   end
 
   ## Constructors
 
-  test 'Create a new Verifier with a public key' do
+  def test_create_a_new_verifier_with_a_public_key
     HealthCards::Verifier.new(keys: @public_key)
   end
 
-  test 'Create a new Verifier with a private key' do
+  def test_create_a_new_verifier_with_a_private_key
     HealthCards::Verifier.new(keys: @private_key)
   end
 
-  test 'Create a new Verifier with a KeySet' do
+  def test_create_a_new_verifier_with_a_KeySet
     key_set = HealthCards::KeySet.new(@public_key)
     HealthCards::Verifier.new(keys: key_set)
   end
 
   ## Key Export
-
-  test 'Verifier exports public keys as JWK' do
+  def test_verifier_exports_public_keys_as_JWK
     verifier = HealthCards::Verifier.new(keys: @private_key)
     key_set = verifier.keys
     assert key_set.is_a? HealthCards::KeySet
   end
 
   ## Adding and Removing Keys
-
-  test 'Verifier allows public keys to be added' do
+  def test_verifier_allows_public_keys_to_be_added
     verifier = HealthCards::Verifier.new
     assert_empty verifier.keys
     verifier.add_keys @public_key
@@ -43,7 +49,7 @@ class VerifierTest < ActiveSupport::TestCase
     assert_includes verifier.keys, @public_key
   end
 
-  test 'Verifier allows public keys to be removed' do
+  def test_verifier_allows_public_keys_to_be_removed
     verifier = HealthCards::Verifier.new(keys: @public_key)
     assert_not_empty verifier.keys
     assert_includes verifier.keys, @public_key
@@ -51,7 +57,7 @@ class VerifierTest < ActiveSupport::TestCase
     assert_empty verifier.keys
   end
 
-  test 'Verifier allows private keys to be added' do
+  def test_verifier_allows_private_keys_to_be_added
     verifier = HealthCards::Verifier.new
     assert_empty verifier.keys
     verifier.add_keys @private_key
@@ -59,7 +65,7 @@ class VerifierTest < ActiveSupport::TestCase
     assert_includes verifier.keys, @private_key
   end
 
-  test 'Verifier allows private keys to be removed' do
+  def test_verifier_allows_private_keys_to_be_removed
     verifier = HealthCards::Verifier.new(keys: @private_key)
     assert_not_empty verifier.keys
     assert_includes verifier.keys, @private_key
@@ -69,108 +75,117 @@ class VerifierTest < ActiveSupport::TestCase
 
   ## Verification
 
-  test 'Verifier can verify JWS object' do
+  def test_verifier_can_verify_JWS_object
     assert @verifier.verify(@jws)
   end
 
-  test 'Verifier can verify JWS String' do
+  def test_verifier_can_verify_JWS_string
     assert @verifier.verify(@jws.to_s)
   end
 
-  test 'Verifier can verify a HealthCard' do
+  def test_verifier_can_verify_a_healthcard
     card = HealthCards::HealthCard.new(@jws)
     assert @verifier.verify(card)
   end
 
-  test 'Verifier doesn\'t verify none JWS-able object' do
+  def test_verifier_doesnt_verify_none_JWSable_object
     assert_raises ArgumentError do
       @verifier.verify(OpenStruct.new(foo: 'bar'))
     end
   end
 
-  test 'Verifier throws exception when attempting to verify health card without an accessible public key' do
-    stub_request(:get, /jwks.json/).to_return(body: HealthCards::KeySet.new(@public_key).to_jwk)
+  def test_verifier_throws_exception_when_attempting_to_verify_health_card_without_an_accessible_public_key
     verifier = HealthCards::Verifier.new
-    assert_raises HealthCards::MissingPublicKeyError do
-      verifier.verify @jws
-    end
+    Net::HTTP.stub :get, ->(url) { HealthCards::KeySet.new(@extra_key).to_jwk } do
+      assert_raises HealthCards::MissingPublicKeyError do
+        verifier.verify @jws
+      end
 
-    assert_raises HealthCards::MissingPublicKeyError do
-      verifier.verify @jws
+      assert_raises HealthCards::MissingPublicKeyError do
+        verifier.verify @jws
+      end
     end
   end
 
-  test 'Verifier can verify JWS when key is resolvable' do
-    stub_request(:get, /jwks.json/).to_return(body: @verifier.keys.to_jwk)
+  def test_verifier_can_verify_JWS_when_key_is_resolvable
     verifier = HealthCards::Verifier.new
-    assert verifier.verify(@jws)
+    Net::HTTP.stub :get, ->(url) { @verifier.keys.to_jwk } do
+      assert verifier.verify(@jws)
+    end
   end
 
   ### Verification Class Methods
-  test 'Verifier class throws exception when attempting to verify health card without an accessible public key' do
-    stub_request(:get, /jwks.json/).to_return(body: HealthCards::KeySet.new(@public_key).to_jwk)
-
+  def test_verifier_class_throws_exception_when_attempting_to_verify_health_card_without_an_accessible_public_key
     verifier = HealthCards::Verifier
-    assert_raises HealthCards::MissingPublicKeyError do
-      verifier.verify @jws
+    Net::HTTP.stub :get, ->(url) { HealthCards::KeySet.new(@extra_key).to_jwk } do
+      assert_raises HealthCards::MissingPublicKeyError do
+        verifier.verify @jws
+      end
     end
   end
 
-  test 'Verifier class can verify health cards when key is resolvable' do
-    stub_request(:get, /jwks.json/).to_return(body: @verifier.keys.to_jwk)
+  def test_verifier_class_can_verify_health_cards_when_key_is_resolvable
     verifier = HealthCards::Verifier
-    assert verifier.verify(@jws)
+    Net::HTTP.stub :get, ->(url) { @verifier.keys.to_jwk } do
+      assert verifier.verify(@jws)
+    end
   end
 
   ## Key Resolution
 
-  test 'Verifier key resolution is active by default' do
+  def test_verifier_key_resolution_is_active_by_default
     assert HealthCards::Verifier.new.resolve_keys?
   end
 
-  test 'Verifier key resolution can be disabled' do
+  def test_verifier_key_resolution_can_be_disabled
     verifier = HealthCards::Verifier.new
     assert verifier.resolve_keys?
     verifier.resolve_keys = false
-    assert_not verifier.resolve_keys?
+    assert(!verifier.resolve_keys?)
     verifier.resolve_keys = true
   end
 
-  test 'Verifier will not verify health cards when key is not resolvable' do
-    stub_request(:get, /jwks.json/).to_return(status: 200, body: @verifier.keys.to_jwk)
+  def test_verifier_will_not_verify_health_cards_when_key_is_not_resolveable
     verifier = HealthCards::Verifier.new
-    verifier.resolve_keys = false
-    assert_raises HealthCards::MissingPublicKeyError do
-      verifier.verify(@jws)
-    end
-    verifier.resolve_keys = true
-    assert verifier.verify(@jws)
-  end
 
-  test 'Verifier will raise an error if no valid key is found' do
-    stub_request(:get, /jwks.json/).to_return(status: 404)
-    verifier = HealthCards::Verifier
-    assert_raises HealthCards::UnresolvableKeySetError do
-      verifier.verify(@jws)
+    Net::HTTP.stub :get, ->(url) { @verifier.keys.to_jwk } do
+      verifier.resolve_keys = false
+      assert_raises HealthCards::MissingPublicKeyError do
+        verifier.verify(@jws)
+      end
+      verifier.resolve_keys = true
+      assert verifier.verify(@jws)
     end
   end
 
-  test 'Verifier will raise a Payload error if key resolution times out' do
-    stub_request(:get, /jwks.json/).to_timeout
+  def test_verifier_will_raise_an_error_if_no_valid_key_is_found
     verifier = HealthCards::Verifier
-    assert_raises HealthCards::UnresolvableKeySetError do
-      verifier.verify(@jws)
+    Net::HTTP.stub :get, ->(url) { raise StandardError, "Not found" } do
+      assert_raises HealthCards::UnresolvableKeySetError do
+        verifier.verify(@jws)
+      end
     end
   end
 
-  test 'Verifier class will verify health cards when key is resolvable' do
-    stub_request(:get, /jwks.json/).to_return(status: 200, body: @verifier.keys.to_jwk)
-    verifier = HealthCards::Verifier
-    assert verifier.verify(@jws)
+  def test_verifier_will_raise_a_payload_error_if_key_resolution_times_out
+    verifier = HealthCards::Verifier.new
+    Net::HTTP.stub :get, ->(url) { raise StandardError, "Timed out" } do
+      assert_raises HealthCards::UnresolvableKeySetError do
+        verifier.verify(@jws)
+      end
+    end
+  end
+
+  def test_verifier_class_will_verify_health_cards_when_key_is_resolvable
+    verifier = HealthCards::Verifier.new
+    jwk = HealthCards::KeySet.from_jwks(@verifier.keys.to_jwk)
+    verifier.stub :resolve_key, ->(_) { jwk } do
+      assert verifier.verify(@jws)
+    end
   end
 
   ## Test Against Spec Examples
-  test 'Against Example Data' do
+  def test_against_example_data
     jws = 'eyJ6aXAiOiJERUYiLCJhbGciOiJFUzI1NiIsImtpZCI6IjNLZmRnLVh3UC03Z1h5eXd0VWZVQUR3QnVtRE9QS01ReC1pRUxMMTFXOXMifQ.'\
           '3ZJLb9swEIT_SrC9ypKo1HWsW5wCfRyKAk17KXygqbXFgA-BpIS4gf57d2kHaIE4p56q24rDjzNDPoGOEVroUxpiW1XRypB6lCb1pZKhixU'\
           '-SjsYjBUJRwxQgNvtoRXvmvp6vbxeinJ1c1PApKB9gnQcENqfl3FvTsOCB0Jd1mlrR6d_yaS9e1Wo_KQ7sYZtASpghy5pab6NuwdUiS3tex'\

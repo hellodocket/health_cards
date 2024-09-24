@@ -2,7 +2,7 @@
 
 require 'test_helper'
 
-class EncodingTest < Minitest::Test
+class EncodingTest < CommonTest
   def setup
     @klass = Class.new
     @klass.extend(HealthCards::Encoding)
